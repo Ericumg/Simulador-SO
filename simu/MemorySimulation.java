@@ -10,7 +10,7 @@ public class MemorySimulation extends JFrame {
     private final DefaultListModel<String> virtualMemoryModel = new DefaultListModel<>();
     private final Queue<String> physicalMemoryQueue = new LinkedList<>();
     private int physicalMemorySize = 4; // Tamaño inicial de la memoria física
-    private int addressCounter = 0; // Contador para las direcciones numéricas
+    private int addressCounter = 0; // Contador inicial en decimal
 
     public MemorySimulation() {
         setTitle("Simulación de Memoria - FIFO");
@@ -35,14 +35,13 @@ public class MemorySimulation extends JFrame {
         JTextField processField = new JTextField(10);
         JButton addProcessButton = new JButton("Agregar Proceso");
         JButton clearButton = new JButton("Limpiar");
-        JComboBox<Integer> memorySizeComboBox = new JComboBox<>(new Integer[]{4, 8, 12, 16});
-        memorySizeComboBox.setSelectedItem(physicalMemorySize);
+        JTextField memorySizeField = new JTextField(String.valueOf(physicalMemorySize), 5);
 
         controlPanel.add(new JLabel("Proceso:"));
         controlPanel.add(processField);
         controlPanel.add(addProcessButton);
         controlPanel.add(new JLabel("Tamaño Memoria Física:"));
-        controlPanel.add(memorySizeComboBox);
+        controlPanel.add(memorySizeField);
         controlPanel.add(clearButton);
 
         // Acción para agregar un proceso
@@ -71,16 +70,25 @@ public class MemorySimulation extends JFrame {
         });
 
         // Acción para cambiar el tamaño de la memoria física
-        memorySizeComboBox.addActionListener(new ActionListener() {
+        memorySizeField.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                physicalMemorySize = (int) memorySizeComboBox.getSelectedItem();
-                JOptionPane.showMessageDialog(MemorySimulation.this, "Tamaño de memoria física configurado a: " + physicalMemorySize, "Configuración", JOptionPane.INFORMATION_MESSAGE);
-                // Limpiar las memorias al cambiar el tamaño
-                physicalMemoryModel.clear();
-                virtualMemoryModel.clear();
-                physicalMemoryQueue.clear();
-                addressCounter = 0; // Reiniciar el contador de direcciones
+                try {
+                    int newSize = Integer.parseInt(memorySizeField.getText().trim());
+                    if (newSize > 0) {
+                        physicalMemorySize = newSize;
+                        JOptionPane.showMessageDialog(MemorySimulation.this, "Tamaño de memoria física configurado a: " + physicalMemorySize, "Configuración", JOptionPane.INFORMATION_MESSAGE);
+                        // Limpiar las memorias al cambiar el tamaño
+                        physicalMemoryModel.clear();
+                        virtualMemoryModel.clear();
+                        physicalMemoryQueue.clear();
+                        addressCounter = 0; // Reiniciar el contador de direcciones
+                    } else {
+                        JOptionPane.showMessageDialog(MemorySimulation.this, "El tamaño debe ser mayor a 0.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(MemorySimulation.this, "Ingrese un número válido.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
 
@@ -90,51 +98,36 @@ public class MemorySimulation extends JFrame {
         add(controlPanel, BorderLayout.SOUTH);
     }
 
+    private String getNextHexAddress() {
+        String hexAddress = Integer.toHexString(addressCounter).toUpperCase(); // Convertir a hexadecimal y en mayúsculas
+        addressCounter = (addressCounter + 1) % 16; // Incrementar y reiniciar después de F (16 en decimal)
+        return hexAddress;
+    }
+
     private void addProcess(String process) {
-        // Verificar si el proceso ya está en la memoria física (sin considerar la dirección)
-        for (String existingProcess : physicalMemoryQueue) {
-            if (existingProcess.contains("Proceso: " + process + " (")) {
-                return; // No realizar ningún cambio
-            }
+        // Asignar dirección hexadecimal al proceso
+        String processWithAddress = "Proceso: " + process + " (Dir: " + getNextHexAddress() + ")";
+
+        // Verificar si el proceso ya está en la memoria física
+        if (physicalMemoryQueue.stream().anyMatch(p -> p.contains("Proceso: " + process + " "))) {
+            return;
         }
-    
-        // Verificar si el proceso está en la memoria virtual
+
+        // Si el proceso está en la memoria virtual, eliminarlo de allí
         for (int i = 0; i < virtualMemoryModel.size(); i++) {
-            String existingProcess = virtualMemoryModel.get(i);
-            if (existingProcess.contains("Proceso: " + process + " (")) {
-                // Eliminar el proceso de la memoria virtual
+            if (virtualMemoryModel.get(i).contains("Proceso: " + process + " ")) {
                 virtualMemoryModel.remove(i);
-    
-                // Asignar nueva dirección y moverlo a la memoria física
-                String processWithAddress = "Proceso: " + process + " (Dir: " + addressCounter + ")";
-                addressCounter++;
-    
-                // Si la memoria física está llena, mover el proceso más antiguo a la memoria virtual
-                if (physicalMemoryQueue.size() >= physicalMemorySize) {
-                    String removedProcess = physicalMemoryQueue.poll();
-                    physicalMemoryModel.removeElement(removedProcess);
-                    virtualMemoryModel.addElement(removedProcess);
-                }
-    
-                // Agregar el proceso a la memoria física
-                physicalMemoryQueue.add(processWithAddress);
-                physicalMemoryModel.addElement(processWithAddress);
-    
-                return;
+                break;
             }
         }
-    
-        // Asignar dirección numérica al proceso
-        String processWithAddress = "Proceso: " + process + " (Dir: " + addressCounter + ")";
-        addressCounter++;
-    
+
         // Si la memoria física está llena, mover el proceso más antiguo a la memoria virtual
         if (physicalMemoryQueue.size() >= physicalMemorySize) {
             String removedProcess = physicalMemoryQueue.poll();
             physicalMemoryModel.removeElement(removedProcess);
             virtualMemoryModel.addElement(removedProcess);
         }
-    
+
         // Agregar el nuevo proceso a la memoria física
         physicalMemoryQueue.add(processWithAddress);
         physicalMemoryModel.addElement(processWithAddress);
