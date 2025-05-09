@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class MemorySimulation extends JFrame {
+    private final MainMenu parentMenu; // Menú principal
     private final DefaultListModel<String> physicalMemoryModel = new DefaultListModel<>();
     private final DefaultListModel<String> virtualMemoryModel = new DefaultListModel<>();
     private final Queue<String> physicalMemoryQueue = new LinkedList<>();
@@ -13,6 +14,7 @@ public class MemorySimulation extends JFrame {
     private int addressCounter = 0; // Contador inicial en decimal
 
     public MemorySimulation() {
+        this.parentMenu = new MainMenu(); // Inicializar el menú principal
         setTitle("Simulación de Memoria - FIFO");
         setSize(700, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -43,6 +45,18 @@ public class MemorySimulation extends JFrame {
         controlPanel.add(new JLabel("Tamaño Memoria Física:"));
         controlPanel.add(memorySizeField);
         controlPanel.add(clearButton);
+
+        JButton backButton = new JButton("Regresar");
+        backButton.addActionListener(e -> {
+            parentMenu.setVisible(true); // Mostrar el menú principal
+            dispose(); // Cerrar la ventana actual
+        });
+
+        // Agregar paneles al marco
+        add(physicalMemoryPanel, BorderLayout.WEST);
+        add(virtualMemoryPanel, BorderLayout.EAST);
+        add(controlPanel, BorderLayout.SOUTH);
+        add(backButton, BorderLayout.NORTH);
 
         // Acción para agregar un proceso
         addProcessButton.addActionListener(new ActionListener() {
@@ -121,16 +135,23 @@ public class MemorySimulation extends JFrame {
             }
         }
 
-        // Si la memoria física está llena, mover el proceso más antiguo a la memoria virtual
+        // Si la memoria física está llena, reemplazar el proceso más antiguo
         if (physicalMemoryQueue.size() >= physicalMemorySize) {
-            String removedProcess = physicalMemoryQueue.poll();
-            physicalMemoryModel.removeElement(removedProcess);
+            String removedProcess = physicalMemoryQueue.poll(); // Obtener y eliminar el proceso más antiguo
+            int indexToReplace = physicalMemoryModel.indexOf(removedProcess); // Obtener el índice del proceso más antiguo
+
+            // Mover el proceso más antiguo a la memoria virtual
             virtualMemoryModel.addElement(removedProcess);
+
+            // Reemplazar el proceso más antiguo con el nuevo proceso
+            physicalMemoryModel.set(indexToReplace, processWithAddress); // Reemplazar en el mismo índice
+        } else {
+            // Si la memoria física no está llena, agregar el nuevo proceso
+            physicalMemoryModel.addElement(processWithAddress);
         }
 
-        // Agregar el nuevo proceso a la memoria física
+        // Agregar el nuevo proceso a la cola de memoria física
         physicalMemoryQueue.add(processWithAddress);
-        physicalMemoryModel.addElement(processWithAddress);
     }
 
     public static void main(String[] args) {
