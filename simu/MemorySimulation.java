@@ -13,7 +13,7 @@ public class MemorySimulation extends JFrame {
     private int physicalMemorySize = 4; // Tamaño inicial de la memoria física
     private int addressCounter = 0; // Contador inicial en decimal
 
-    public MemorySimulation() {
+    public MemorySimulation(MainMenu parentMenu) {
         this.parentMenu = new MainMenu(); // Inicializar el menú principal
         setTitle("Simulación de Memoria - FIFO");
         setSize(700, 400);
@@ -156,7 +156,8 @@ public class MemorySimulation extends JFrame {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            MemorySimulation simulation = new MemorySimulation();
+            MainMenu menu = new MainMenu();
+            MemorySimulation simulation = new MemorySimulation(menu);
             simulation.setVisible(true);
         });
     }

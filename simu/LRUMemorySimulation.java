@@ -14,7 +14,7 @@ public class LRUMemorySimulation extends JFrame {
     private int physicalMemorySize = 4; // Tamaño inicial de la memoria física
     private int addressCounter = 0; // Contador inicial en decimal
 
-    public LRUMemorySimulation() {
+    public LRUMemorySimulation(MainMenu parentMenu) {
         this.parentMenu = new MainMenu(); // Inicializar el menú principal
         setTitle("Simulación de Memoria - LRU");
         setSize(700, 400);
@@ -163,7 +163,8 @@ public class LRUMemorySimulation extends JFrame {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            LRUMemorySimulation simulation = new LRUMemorySimulation();
+            MainMenu menu = new MainMenu();
+            LRUMemorySimulation simulation = new LRUMemorySimulation(menu);
             simulation.setVisible(true);
         });
     }

@@ -1,43 +1,48 @@
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.*;
 
 public class MainMenu extends JFrame {
     public MainMenu() {
         setTitle("Simulador de Memoria");
-        setSize(400, 200);
+        setSize(400, 250);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(null);
+        setLayout(new BorderLayout());
+
+        // Panel central con BoxLayout vertical
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+
+        // Título de bienvenida
+        JLabel titleLabel = new JLabel("¡Bienvenido al Simulador de Memoria!", SwingConstants.CENTER);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
+        centerPanel.add(titleLabel);
 
         // Botón para abrir el simulador FIFO
         JButton fifoButton = new JButton("Simulador FIFO");
-        fifoButton.setBounds(50, 50, 140, 40);
-        fifoButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                SwingUtilities.invokeLater(() -> {
-                    MemorySimulation fifoSimulation = new MemorySimulation();
-                    fifoSimulation.setVisible(true);
-                });
-            }
+        fifoButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        fifoButton.setMaximumSize(new Dimension(200, 40));
+        fifoButton.addActionListener(e -> {
+            MemorySimulation fifoSimulation = new MemorySimulation(this);
+            fifoSimulation.setVisible(true);
+            setVisible(false);
         });
+        centerPanel.add(fifoButton);
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 15))); // Espacio entre botones
 
         // Botón para abrir el simulador LRU
         JButton lruButton = new JButton("Simulador LRU");
-        lruButton.setBounds(200, 50, 140, 40);
-        lruButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                SwingUtilities.invokeLater(() -> {
-                    LRUMemorySimulation lruSimulation = new LRUMemorySimulation();
-                    lruSimulation.setVisible(true);
-                });
-            }
+        lruButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        lruButton.setMaximumSize(new Dimension(200, 40));
+        lruButton.addActionListener(e -> {
+            LRUMemorySimulation lruSimulation = new LRUMemorySimulation(this);
+            lruSimulation.setVisible(true);
+            setVisible(false);
         });
+        centerPanel.add(lruButton);
 
-        // Agregar botones al marco
-        add(fifoButton);
-        add(lruButton);
+        add(centerPanel, BorderLayout.CENTER);
     }
 
     public static void main(String[] args) {
