@@ -85,29 +85,27 @@ public class RuedaMemorySimulation extends JFrame {
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 int w = getWidth(), h = getHeight();
-                int size = Math.min(w, h) - 10; // Más grande
+                int size = Math.min(w, h) - 20; // tamaño reducido
                 int cx = w / 2, cy = h / 2, r = size / 2;
                 g.setColor(Color.LIGHT_GRAY);
                 g.fillOval(cx - r, cy - r, size, size);
                 g.setColor(Color.BLACK);
                 g.drawOval(cx - r, cy - r, size, size);
-                // Dibujar sectores y páginas
                 int n = physicalPages.size();
                 for (int i = 0; i < n; i++) {
                     double angle = 2 * Math.PI * i / (n == 0 ? 1 : n);
-                    int px = (int) (cx + (r - 40) * Math.cos(angle - Math.PI / 2));
-                    int py = (int) (cy + (r - 40) * Math.sin(angle - Math.PI / 2));
+                    int px = (int) (cx + (r - 22) * Math.cos(angle - Math.PI / 2));
+                    int py = (int) (cy + (r - 22) * Math.sin(angle - Math.PI / 2));
                     Page page = physicalPages.get(i);
                     g.setColor(i == pointer ? Color.RED : (page.referenced ? new Color(0, 128, 0) : Color.BLUE));
-                    g.fillOval(px - 25, py - 25, 50, 50);
-                    g.setColor(Color.WHITE);
-                    g.setFont(new Font("Arial", Font.BOLD, 13));
-                    g.drawString(page.name, px - 20, py - 2);
+                    g.fillOval(px - 20, py - 20, 35, 35);
+                    g.setColor(Color.BLACK);
+                    g.setFont(new Font("Arial", Font.BOLD, 14));
+                    g.drawString(page.name, px - 10, py - 2);
                     g.setColor(Color.YELLOW);
-                    g.setFont(new Font("Arial", Font.PLAIN, 12));
-                    g.drawString("R=" + (page.referenced ? 1 : 0), px - 10, py + 18);
+                    g.setFont(new Font("Arial", Font.BOLD, 14));
+                    g.drawString("R=" + (page.referenced ? 1 : 0), px - 8, py + 10);
                 }
-                // Flecha del puntero
                 if (n > 0) {
                     double angle = 2 * Math.PI * pointer / n;
                     int fx = (int) (cx + (r - 5) * Math.cos(angle - Math.PI / 2));
@@ -116,12 +114,12 @@ public class RuedaMemorySimulation extends JFrame {
                     g.drawLine(cx, cy, fx, fy);
                 }
                 g.setColor(Color.BLACK);
-                g.setFont(new Font("Arial", Font.BOLD, 16));
-                g.drawString("RUEDA", cx - 30, cy);
+                g.setFont(new Font("Arial", Font.BOLD, 13));
+                g.drawString("    X  ", cx - 20, cy);
             }
         }
         ClockPanel clockPanel = new ClockPanel();
-        clockPanel.setPreferredSize(new Dimension(320, 320)); // Más grande
+        clockPanel.setPreferredSize(new Dimension(180, 180)); // Tamaño compacto
         add(clockPanel, BorderLayout.CENTER);
 
         updateClock = clockPanel::repaint;

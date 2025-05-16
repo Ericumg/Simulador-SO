@@ -6,16 +6,32 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
-import java.util.Queue;
 
 public class LRUMemorySimulation extends JFrame {
     private final MainMenu parentMenu; // Menú principal
     private final DefaultListModel<String> physicalMemoryModel = new DefaultListModel<>();
     private final DefaultListModel<String> virtualMemoryModel = new DefaultListModel<>();
-    private final LinkedHashMap<String, String> physicalMemoryMap = new LinkedHashMap<>(16, 0.75f, true); // LRU cache
     private final Queue<String> virtualMemoryQueue = new LinkedList<>();
     private int physicalMemorySize = 4; // Tamaño inicial de la memoria física
     private int addressCounter = 0; // Contador inicial en decimal
+    private final java.util.List<PageLRU> physicalPages = new java.util.ArrayList<>();
+    private int accessCounter = 1;
+
+    // Clase interna para representar una página LRU
+    static class PageLRU {
+        String name;
+        String address;
+        int lastUsed;
+        PageLRU(String name, String address, int lastUsed) {
+            this.name = name;
+            this.address = address;
+            this.lastUsed = lastUsed;
+        }
+        @Override
+        public String toString() {
+            return name + " (Dir: " + address + ") [Acceso: " + lastUsed + "]";
+        }
+    }
 
     public LRUMemorySimulation(MainMenu parentMenu) {
         this.parentMenu = parentMenu; // Usar el menú principal recibido como parámetro
@@ -29,6 +45,18 @@ public class LRUMemorySimulation extends JFrame {
         physicalMemoryPanel.setBorder(BorderFactory.createTitledBorder("Memoria Física"));
         JList<String> physicalMemoryList = new JList<>(physicalMemoryModel);
         physicalMemoryPanel.add(new JScrollPane(physicalMemoryList), BorderLayout.CENTER);
+        // Doble clic para simular acceso
+        physicalMemoryList.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int idx = physicalMemoryList.locationToIndex(e.getPoint());
+                    if (idx >= 0 && idx < physicalPages.size()) {
+                        physicalPages.get(idx).lastUsed = accessCounter++;
+                        updatePhysicalModel();
+                    }
+                }
+            }
+        });
 
         // Panel de memoria virtual
         JPanel virtualMemoryPanel = new JPanel(new BorderLayout());
@@ -82,9 +110,10 @@ public class LRUMemorySimulation extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 physicalMemoryModel.clear();
                 virtualMemoryModel.clear();
-                physicalMemoryMap.clear();
+                physicalPages.clear();
                 virtualMemoryQueue.clear();
                 addressCounter = 0; // Reiniciar el contador de direcciones
+                accessCounter = 1; // Reiniciar el contador de accesos
             }
         });
 
@@ -95,16 +124,10 @@ public class LRUMemorySimulation extends JFrame {
                 try {
                     int newSize = Integer.parseInt(memorySizeField.getText().trim());
                     if (newSize > 0) {
-                        // Si el tamaño se reduce, mover procesos sobrantes a memoria virtual
-                        while (physicalMemoryMap.size() > newSize) {
-                            String removedKey = physicalMemoryMap.keySet().iterator().next();
-                            String removed = physicalMemoryMap.remove(removedKey);
-                            physicalMemoryModel.removeElement(removed);
-                            virtualMemoryModel.addElement(removed);
-                        }
                         physicalMemorySize = newSize;
                         JOptionPane.showMessageDialog(LRUMemorySimulation.this, "Tamaño de memoria física configurado a: " + physicalMemorySize, "Configuración", JOptionPane.INFORMATION_MESSAGE);
                         if (addressCounter >= physicalMemorySize) addressCounter = 0;
+                        updatePhysicalModel();
                     } else {
                         JOptionPane.showMessageDialog(LRUMemorySimulation.this, "El tamaño debe ser mayor a 0.", "Error", JOptionPane.ERROR_MESSAGE);
                     }
@@ -126,44 +149,57 @@ public class LRUMemorySimulation extends JFrame {
         return hexAddress;
     }
 
+    private void updatePhysicalModel() {
+        physicalMemoryModel.clear();
+        // Resaltar el candidato a reemplazo si la memoria está llena
+        int minIdx = -1, minAccess = Integer.MAX_VALUE;
+        if (physicalPages.size() >= physicalMemorySize) {
+            for (int i = 0; i < physicalPages.size(); i++) {
+                if (physicalPages.get(i).lastUsed < minAccess) {
+                    minAccess = physicalPages.get(i).lastUsed;
+                    minIdx = i;
+                }
+            }
+        }
+        for (int i = 0; i < physicalPages.size(); i++) {
+            String s = physicalPages.get(i).toString();
+            if (i == minIdx) s += "  ← Próximo a reemplazar";
+            physicalMemoryModel.addElement(s);
+        }
+    }
+
     private void addProcess(String process) {
-        // Asignar una nueva dirección hexadecimal al proceso
-        String processWithAddress = "Proceso: " + process + " (Dir: " + getNextHexAddress() + ")";
-    
-        // Si el proceso ya está en la memoria física, actualizar su dirección en el mismo lugar
-        if (physicalMemoryMap.containsKey(process)) {
-            String oldProcessWithAddress = physicalMemoryMap.get(process); // Obtener la dirección anterior
-            int indexToUpdate = physicalMemoryModel.indexOf(oldProcessWithAddress); // Obtener el índice del proceso
-            physicalMemoryModel.set(indexToUpdate, processWithAddress); // Actualizar en el mismo índice
-            physicalMemoryMap.put(process, processWithAddress); // Actualizar en el mapa
-            return;
+        // Si ya está en memoria física, actualizar lastUsed
+        for (PageLRU p : physicalPages) {
+            if (p.name.equals("Proceso: " + process)) {
+                p.lastUsed = accessCounter++;
+                updatePhysicalModel();
+                return;
+            }
         }
-    
-        // Si el proceso está en la memoria virtual, eliminarlo de allí
-        if (virtualMemoryQueue.contains(process)) {
-            virtualMemoryQueue.remove(process);
-            virtualMemoryModel.removeElement("Proceso: " + process);
+        // Si está en memoria virtual, eliminarlo de ahí
+        for (int i = 0; i < virtualMemoryModel.size(); i++) {
+            if (virtualMemoryModel.get(i).contains("Proceso: " + process + " ")) {
+                virtualMemoryModel.remove(i);
+                break;
+            }
         }
-    
-        // Si la memoria física está llena, mover el proceso más antiguo a la memoria virtual
-        if (physicalMemoryMap.size() >= physicalMemorySize) {
-            String leastUsedProcess = physicalMemoryMap.keySet().iterator().next(); // Obtener el menos usado (más antiguo)
-            String removedProcess = physicalMemoryMap.remove(leastUsedProcess);
-            int indexToReplace = physicalMemoryModel.indexOf(removedProcess); // Obtener el índice del proceso más antiguo
-    
-            // Mover el proceso más antiguo a la memoria virtual
-            virtualMemoryQueue.add(leastUsedProcess);
-            virtualMemoryModel.addElement(removedProcess);
-    
-            // Reemplazar el proceso más antiguo con el nuevo proceso
-            physicalMemoryModel.set(indexToReplace, processWithAddress); // Reemplazar en el mismo índice
-        } else {
-            // Si la memoria física no está llena, agregar el nuevo proceso
-            physicalMemoryModel.addElement(processWithAddress);
+        // Si la memoria física está llena, reemplazar el menos usado
+        if (physicalPages.size() >= physicalMemorySize) {
+            int minIdx = 0, minAccess = physicalPages.get(0).lastUsed;
+            for (int i = 1; i < physicalPages.size(); i++) {
+                if (physicalPages.get(i).lastUsed < minAccess) {
+                    minAccess = physicalPages.get(i).lastUsed;
+                    minIdx = i;
+                }
+            }
+            PageLRU removed = physicalPages.remove(minIdx);
+            virtualMemoryModel.addElement(removed.toString());
         }
-    
-        // Agregar el nuevo proceso al mapa de memoria física
-        physicalMemoryMap.put(process, processWithAddress);
+        // Agregar nuevo proceso
+        PageLRU newPage = new PageLRU("Proceso: " + process, getNextHexAddress(), accessCounter++);
+        physicalPages.add(newPage);
+        updatePhysicalModel();
     }
 
     public static void main(String[] args) {
