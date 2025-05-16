@@ -1,4 +1,7 @@
+package LRU;
 import javax.swing.*;
+import MENU.MainMenu;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -15,7 +18,7 @@ public class LRUMemorySimulation extends JFrame {
     private int addressCounter = 0; // Contador inicial en decimal
 
     public LRUMemorySimulation(MainMenu parentMenu) {
-        this.parentMenu = new MainMenu(); // Inicializar el menú principal
+        this.parentMenu = parentMenu; // Usar el menú principal recibido como parámetro
         setTitle("Simulación de Memoria - LRU");
         setSize(700, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -92,14 +95,16 @@ public class LRUMemorySimulation extends JFrame {
                 try {
                     int newSize = Integer.parseInt(memorySizeField.getText().trim());
                     if (newSize > 0) {
+                        // Si el tamaño se reduce, mover procesos sobrantes a memoria virtual
+                        while (physicalMemoryMap.size() > newSize) {
+                            String removedKey = physicalMemoryMap.keySet().iterator().next();
+                            String removed = physicalMemoryMap.remove(removedKey);
+                            physicalMemoryModel.removeElement(removed);
+                            virtualMemoryModel.addElement(removed);
+                        }
                         physicalMemorySize = newSize;
                         JOptionPane.showMessageDialog(LRUMemorySimulation.this, "Tamaño de memoria física configurado a: " + physicalMemorySize, "Configuración", JOptionPane.INFORMATION_MESSAGE);
-                        // Limpiar las memorias al cambiar el tamaño
-                        physicalMemoryModel.clear();
-                        virtualMemoryModel.clear();
-                        physicalMemoryMap.clear();
-                        virtualMemoryQueue.clear();
-                        addressCounter = 0; // Reiniciar el contador de direcciones
+                        if (addressCounter >= physicalMemorySize) addressCounter = 0;
                     } else {
                         JOptionPane.showMessageDialog(LRUMemorySimulation.this, "El tamaño debe ser mayor a 0.", "Error", JOptionPane.ERROR_MESSAGE);
                     }

@@ -1,4 +1,9 @@
+package MENU;
 import javax.swing.*;
+import FIFO.MemorySimulation;
+import LRU.LRUMemorySimulation;
+import RUEDA.RuedaMemorySimulation;
+import NRU.NRUMemorySimulation;
 import java.awt.*;
 
 public class MainMenu extends JFrame {
@@ -41,6 +46,30 @@ public class MainMenu extends JFrame {
             setVisible(false);
         });
         centerPanel.add(lruButton);
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 15))); // Espacio entre botones
+
+        // Botón para abrir el simulador Rueda
+        JButton ruedaButton = new JButton("Simulador Rueda");
+        ruedaButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        ruedaButton.setMaximumSize(new Dimension(200, 40));
+        ruedaButton.addActionListener(e -> {
+            RuedaMemorySimulation ruedaSimulation = new RuedaMemorySimulation(this);
+            ruedaSimulation.setVisible(true);
+            setVisible(false);
+        });
+        centerPanel.add(ruedaButton);
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 15))); // Espacio entre botones
+
+        // Botón para abrir el simulador NRU
+        JButton nruButton = new JButton("Simulador NRU");
+        nruButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        nruButton.setMaximumSize(new Dimension(200, 40));
+        nruButton.addActionListener(e -> {
+            NRUMemorySimulation nruSimulation = new NRUMemorySimulation(this);
+            nruSimulation.setVisible(true);
+            setVisible(false);
+        });
+        centerPanel.add(nruButton);
 
         add(centerPanel, BorderLayout.CENTER);
     }

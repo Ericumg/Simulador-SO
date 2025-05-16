@@ -1,0 +1,6 @@
+cd simu
+javac FIFO/*.java LRU/*.java RUEDA/*.java NRU/*.java MENU/*.java
+java MENU.MainMenu
+
+Limpiar .class
+Get-ChildItem -Recurse -Filter *.class | Remove-Item -Force
