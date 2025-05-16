@@ -69,6 +69,13 @@ public class NRUMemorySimulation extends JFrame {
         controlPanel.add(clearButton);
         controlPanel.add(refreshButton);
 
+        // Barra de progreso para el ciclo de limpieza de R
+        JProgressBar cleanCycleBar = new JProgressBar(0, 100);
+        cleanCycleBar.setValue(100);
+        cleanCycleBar.setStringPainted(true);
+        cleanCycleBar.setString("Ciclo de limpieza de R");
+        add(cleanCycleBar, BorderLayout.CENTER);
+
         JButton backButton = new JButton("Regresar");
         backButton.addActionListener(new ActionListener() {
             @Override
@@ -78,18 +85,6 @@ public class NRUMemorySimulation extends JFrame {
             }
         });
 
-        add(physicalMemoryPanel, BorderLayout.WEST);
-        add(virtualMemoryPanel, BorderLayout.EAST);
-        add(controlPanel, BorderLayout.SOUTH);
-        add(backButton, BorderLayout.NORTH);
-
-        // Barra de progreso para el ciclo de limpieza de R
-        JProgressBar cleanCycleBar = new JProgressBar(0, 100);
-        cleanCycleBar.setValue(100);
-        cleanCycleBar.setStringPainted(true);
-        cleanCycleBar.setString("Ciclo de limpieza de R");
-        add(cleanCycleBar, BorderLayout.CENTER);
-
         // Campo para definir el tiempo del ciclo de limpieza
         JPanel timerPanel = new JPanel();
         timerPanel.add(new JLabel("MS ciclo limpieza R:"));
@@ -97,7 +92,16 @@ public class NRUMemorySimulation extends JFrame {
         timerPanel.add(msField);
         JButton setMsButton = new JButton("Aplicar");
         timerPanel.add(setMsButton);
-        add(timerPanel, BorderLayout.NORTH);
+
+        // Panel contenedor para la parte superior
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.add(backButton, BorderLayout.WEST);
+        topPanel.add(timerPanel, BorderLayout.CENTER);
+        add(topPanel, BorderLayout.NORTH);
+
+        add(physicalMemoryPanel, BorderLayout.WEST);
+        add(virtualMemoryPanel, BorderLayout.EAST);
+        add(controlPanel, BorderLayout.SOUTH);
 
         addProcessButton.addActionListener(new ActionListener() {
             @Override
